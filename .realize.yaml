@@ -1,0 +1,32 @@
+settings:
+  legacy:
+    force: false
+    interval: 0s
+server:
+  status: false
+  open: false
+  port: 0
+  host: ""
+schema:
+- name: /Applications/AMPPS/www/go/src/research/go-microservice
+  path: /Applications/AMPPS/www/go/src/research/go-microservice
+  commands:
+    clean:
+      status: true
+    vet:
+      status: true
+    install:
+      status: true
+    build:
+      status: true
+    run:
+      status: true
+  watcher:
+    paths:
+    - /
+    extensions:
+    - go
+    ignored_paths:
+    - .git
+    - .realize
+    - vendor
