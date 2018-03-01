@@ -1,4 +1,4 @@
-# 3. Use Rust for performance-critical functionality
+# 3. Use Go for performance-critical functionality
 
 Date: 2018-02-27
 

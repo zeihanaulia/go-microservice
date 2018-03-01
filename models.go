@@ -41,7 +41,7 @@ func (u *User) create(db *sqlx.DB) error {
 	if err != nil {
 		return err
 	}
-	return db.QueryRow("INSERT INTO users.users(name, email, password) VALUES($1, $2, $3) RETURNING id", u.Name, u.Email, string(hashedPassword)).Scan(&u.ID)
+	return db.QueryRow("INSERT INTO users(name, email, password) VALUES($1, $2, $3) RETURNING id", u.Name, u.Email, string(hashedPassword)).Scan(&u.ID)
 }
 
 func list(db *sqlx.DB, start, count int) ([]User, error) {
