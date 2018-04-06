@@ -21,10 +21,15 @@ func (u *User) update(db *sqlx.DB) error {
 		[]byte(u.Password),
 		bcrypt.DefaultCost,
 	)
+
 	if err != nil {
 		return err
 	}
-	_, err = db.Exec("UPDATE users SET name=$1, email=$2, password=$3 WHERE id=$4", u.Name, u.Email, string(hashedPassword), u.ID)
+
+	_, err = db.Exec(
+		"UPDATE users SET name=$1, email=$2, password=$3 WHERE id=$4",
+		u.Name, u.Email, string(hashedPassword), u.ID,
+	)
 	return err
 }
 
@@ -38,17 +43,24 @@ func (u *User) create(db *sqlx.DB) error {
 		[]byte(u.Password),
 		bcrypt.DefaultCost,
 	)
+
 	if err != nil {
 		return err
 	}
-	return db.QueryRow("INSERT INTO users(name, email, password) VALUES($1, $2, $3) RETURNING id", u.Name, u.Email, string(hashedPassword)).Scan(&u.ID)
+
+	return db.QueryRow(
+		"INSERT INTO users(id, name, email, password) VALUES($1, $2, $3, $4) RETURNING id",
+		u.ID, u.Name, u.Email, string(hashedPassword),
+	).Scan(&u.ID)
 }
 
 func list(db *sqlx.DB, start, count int) ([]User, error) {
 	users := []User{}
 	err := db.Select(&users, "SELECT id, name, email FROM users LIMIT $1 OFFSET $2", count, start)
+
 	if err != nil {
 		return nil, err
 	}
+
 	return users, nil
 }

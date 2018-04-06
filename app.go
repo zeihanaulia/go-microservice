@@ -17,9 +17,11 @@ import (
 type App struct {
 	DB     *sqlx.DB
 	Router *mux.Router
+	Cache  Cache
 }
 
-func (a *App) Initialize(db *sqlx.DB) {
+func (a *App) Initialize(cache Cache, db *sqlx.DB) {
+	a.Cache = cache
 	a.DB = db
 	a.Router = mux.NewRouter()
 	a.initializeRoutes()
@@ -45,7 +47,6 @@ func respondWithError(w http.ResponseWriter, code int, message string) {
 
 func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 	response, _ := json.Marshal(payload)
-
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 	w.Write(response)
@@ -56,6 +57,13 @@ func (a *App) getUser(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(vars["id"])
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, "Invalid product ID")
+		return
+	}
+
+	if value, err := a.Cache.getValue(id); err == nil && len(value) != 0 {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(value))
 		return
 	}
 
@@ -70,7 +78,15 @@ func (a *App) getUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	respondWithJSON(w, http.StatusOK, user)
+	response, _ := json.Marshal(user)
+	if err := a.Cache.setValue(user.ID, response); err != nil {
+		respondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(response)
 }
 
 func (a *App) getUsers(w http.ResponseWriter, r *http.Request) {
@@ -80,6 +96,7 @@ func (a *App) getUsers(w http.ResponseWriter, r *http.Request) {
 	if count > 10 || count < 1 {
 		count = 10
 	}
+
 	if start < 0 {
 		start = 0
 	}
@@ -102,8 +119,16 @@ func (a *App) createUser(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	if err := user.create(a.DB); err != nil {
-		fmt.Println(err.Error())
+	a.DB.Get(&user.ID, "SELECT nextval('users_id_seq')")
+	fmt.Println(user.ID)
+	JSONByte, _ := json.Marshal(user)
+	fmt.Println(string(JSONByte))
+	if err := a.Cache.setValue(user.ID, string(JSONByte)); err != nil {
+		respondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	if err := a.Cache.enqueueValue(createUsersQueue, user.ID); err != nil {
 		respondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
