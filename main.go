@@ -7,7 +7,6 @@ import (
 	"os"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )
 
@@ -18,10 +17,8 @@ const (
 )
 
 func main() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
+
+	flag.Parse()
 
 	var numWorkers int
 	cache := Cache{Enable: true}
@@ -75,7 +72,6 @@ func main() {
 		"Number of workers to consume queue",
 	)
 
-	flag.Parse()
 	cache.Pool = cache.NewCachePool()
 
 	connectionString := fmt.Sprintf(
@@ -96,5 +92,5 @@ func main() {
 
 	a := App{}
 	a.Initialize(cache, db)
-	a.Run(":8080")
+	a.Run(":3000")
 }
