@@ -15,7 +15,8 @@ RUN mkdir -p GOPATH/src/app
 ADD . $GOPATH/src/app
 WORKDIR $GOPATH/src/app
 
-RUN go build -o main .
+RUN go get -v \
+    && go build -o main . 
 CMD ["/go/src/app/main"]
 
 EXPOSE 3000

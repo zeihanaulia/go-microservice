@@ -18,10 +18,9 @@ services:
       - POSTGRES_PASSWORD=postgres
     healthcheck:
       test: exit 0
-  userservice:
-    container_name: userservice
-    image: userservice
-    build: .
+  user_service:
+    image: user_service
+    build: ./user-service
     environment:
       - APP_RD_ADDRESS=redis:6379
       - APP_RD_AUTH=password
@@ -40,3 +39,55 @@ services:
     links:
       - users-service-db
       - redis
+  proxy:
+    container_name: userservice_loadbalance
+    build: ./nginx
+    ports:
+      - "80:80"
+    links:
+      - user_service
+      - famous_news_service
+      - politics_news_service
+      - sports_news_service
+  mongo:
+    image: mongo:latest
+    container_name: "mongodb"
+    ports:
+      - "27017:27017"
+    command: mongod --smallfiles -logpath=/dev/null # --quiet
+  famous_news_service:
+    image: famous_new_service
+    build: ./famous-news-service
+    volumes:
+      - '.:/usr/srv/app'
+    environment:
+      - APP_SETTINGS=config.DevelopmentConfig
+      - DATABASE_HOST=mongodb://mongo:27017/
+    depends_on:
+      - mongo
+    links:
+      - mongo
+  politics_news_service:
+    image: politics_new_service
+    build: ./politics-news-service
+    volumes:
+      - '.:/usr/srv/app'
+    environment:
+      - APP_SETTINGS=config.DevelopmentConfig
+      - DATABASE_HOST=mongodb://mongo:27017/
+    depends_on:
+      - mongo
+    links:
+      - mongo
+  sports_news_service:
+    image: sports_new_service
+    build: ./sports-news-service
+    volumes:
+      - '.:/usr/srv/app'
+    environment:
+      - APP_SETTINGS=config.DevelopmentConfig
+      - DATABASE_HOST=mongodb://mongo:27017/
+    depends_on:
+      - mongo
+    links:            
+      - mongo
