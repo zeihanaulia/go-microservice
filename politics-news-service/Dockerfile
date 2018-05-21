@@ -2,6 +2,6 @@ FROM python:3.6.5
 COPY . /app
 WORKDIR /app
 RUN pip install -r requirements.txt
-ENTRYPOINT [ "python" ]
-CMD [ "app.py" ]
-EXPOSE 5000
+ENTRYPOINT [ "nameko" ]
+CMD [ "run", "--config", "config.yaml", "service" ]
+EXPOSE 8000
